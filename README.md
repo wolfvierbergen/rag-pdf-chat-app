@@ -59,7 +59,7 @@ source rag_env/bin/activate
 
 ### 4. Install Dependencies
 
-pip install sentence-transformers faiss-cpu PyPDF2 tiktoken requests numpy
+pip install -r requirements.txt
 
 ### 5. Set Up Project Structure
 

@@ -8,7 +8,7 @@ This script queries the PDF RAG system using Ollama:
 3. Passes the chunks to Ollama for a response
 
 Usage:
-  python query_rag_ollama.py "your question here" [--model MODEL_NAME] [--top-k 3]
+  python query_rag.py "your question here" [--model MODEL_NAME] [--top-k 3]
 
 Arguments:
   question         The question to ask the RAG system
