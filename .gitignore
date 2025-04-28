@@ -65,3 +65,5 @@ yarn-error.log*
 *.key
 
 .DS_Store
+metrics/performance_metrics.json
+processed_files.json
