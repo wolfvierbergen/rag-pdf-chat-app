@@ -68,7 +68,120 @@
       "chunk_size": 128,
       "tokenizer_name": "o200k_base",
       "embedding_model": "intfloat/e5-base-v2"
+    },
+    {
+      "pdf_path": "library/Thesis_Merlijn_stoffels.pdf",
+      "pdf_size_bytes": 5362428,
+      "extracted_text_length": 162436,
+      "num_tokens": 39872,
+      "num_chunks": 120,
+      "processing_time_seconds": 0.0,
+      "tokens_per_second": 0.0,
+      "embedding_time_seconds": 4.252049922943115,
+      "peak_memory_mb": 475.125,
+      "timestamp": "2025-04-28T17:48:29.870022",
+      "chunk_size": 58,
+      "tokenizer_name": "o200k_base",
+      "embedding_model": "intfloat/e5-base-v2"
+    },
+    {
+      "pdf_path": "library/Thesis_Merlijn_stoffels.pdf",
+      "pdf_size_bytes": 5362428,
+      "extracted_text_length": 162436,
+      "num_tokens": 39872,
+      "num_chunks": 120,
+      "processing_time_seconds": 0.0,
+      "tokens_per_second": 0.0,
+      "embedding_time_seconds": 4.18470311164856,
+      "peak_memory_mb": 301.59375,
+      "timestamp": "2025-04-28T21:31:39.247718",
+      "chunk_size": 58,
+      "tokenizer_name": "o200k_base",
+      "embedding_model": "intfloat/e5-base-v2"
+    },
+    {
+      "pdf_path": "library/Thesis_Merlijn_stoffels.pdf",
+      "pdf_size_bytes": 5362428,
+      "extracted_text_length": 162436,
+      "num_tokens": 39872,
+      "num_chunks": 120,
+      "processing_time_seconds": 0.0,
+      "tokens_per_second": 0.0,
+      "embedding_time_seconds": 4.200461149215698,
+      "peak_memory_mb": 454.1875,
+      "timestamp": "2025-04-28T21:36:28.465808",
+      "chunk_size": 58,
+      "tokenizer_name": "o200k_base",
+      "embedding_model": "intfloat/e5-base-v2"
+    },
+    {
+      "pdf_path": "library/Thesis_Merlijn_stoffels.pdf",
+      "pdf_size_bytes": 5362428,
+      "extracted_text_length": 162436,
+      "num_tokens": 39872,
+      "num_chunks": 120,
+      "processing_time_seconds": 0.0,
+      "tokens_per_second": 0.0,
+      "embedding_time_seconds": 4.012263059616089,
+      "peak_memory_mb": 444.46875,
+      "timestamp": "2025-04-28T21:42:19.532872",
+      "chunk_size": 58,
+      "tokenizer_name": "o200k_base",
+      "embedding_model": "intfloat/e5-base-v2"
+    },
+    {
+      "pdf_path": "library/Thesis_Merlijn_stoffels.pdf",
+      "pdf_size_bytes": 5362428,
+      "extracted_text_length": 153413,
+      "num_tokens": 38021,
+      "num_chunks": 97,
+      "processing_time_seconds": 0.05400300025939946,
+      "tokens_per_second": 704053.4751285837,
+      "embedding_time_seconds": 4.11114501953125,
+      "peak_memory_mb": 479.796875,
+      "timestamp": "2025-04-28T22:19:27.891744",
+      "chunk_size": 344,
+      "tokenizer_name": "o200k_base",
+      "embedding_model": "intfloat/e5-base-v2"
+    },
+    {
+      "pdf_path": "library/Thesis_Merlijn_stoffels.pdf",
+      "pdf_size_bytes": 5362428,
+      "extracted_text_length": 153413,
+      "num_tokens": 38021,
+      "num_chunks": 97,
+      "processing_time_seconds": 0.058538913726806543,
+      "tokens_per_second": 649499.5820632927,
+      "embedding_time_seconds": 3.499033212661743,
+      "peak_memory_mb": 475.390625,
+      "timestamp": "2025-04-28T22:25:18.645589",
+      "chunk_size": 344,
+      "tokenizer_name": "o200k_base",
+      "embedding_model": "intfloat/e5-base-v2"
     }
   ],
-  "queries": []
+  "queries": [
+    {
+      "query": "What how does the work account for clouds and weather?",
+      "query_length": 54,
+      "retrieval_time_seconds": 1.5800421237945557,
+      "llm_model": "llama3:8b",
+      "llm_generation_time_seconds": 13.7850821018219,
+      "response_length": 632,
+      "num_chunks_retrieved": 3,
+      "peak_memory_mb": 264.296875,
+      "timestamp": "2025-04-28T17:50:54.343618"
+    },
+    {
+      "query": "What how does the work account for clouds and weather?",
+      "query_length": 54,
+      "retrieval_time_seconds": 0.11954712867736816,
+      "llm_model": "llama3:8b",
+      "llm_generation_time_seconds": 16.348320960998535,
+      "response_length": 863,
+      "num_chunks_retrieved": 5,
+      "peak_memory_mb": 322.796875,
+      "timestamp": "2025-04-28T22:42:19.838964"
+    }
+  ]
 }
