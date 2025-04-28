@@ -46,7 +46,7 @@ wheels/
 .ipynb_checkpoints
 
 # Log files
-*.log
+*.logd
 logs/
 npm-debug.log*
 yarn-debug.log*

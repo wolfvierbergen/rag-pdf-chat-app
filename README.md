@@ -87,6 +87,7 @@ ollama serve
 Then query your PDFs:
 python query_rag_ollama.py "Your question about the PDFs" --model llama3:8b --temperature 0.2
 
+
 ## Advanced Usage
 
 ### Force Reprocessing of All PDFs
@@ -154,3 +155,53 @@ This system is designed to be easily extended. Some possible improvements:
 - Python 3.8+
 - macOS (should work on other platforms but tested on macOS)
 - Ollama installed (from ollama.com)
+
+
+
+## Performance Tracking
+
+This system includes robust performance tracking to measure and optimize processing speed and AI response generation.
+
+### Tracked Metrics
+
+**For PDF Processing:**
+- Tokens processed per second
+- PDF extraction time
+- Chunking performance
+- Embedding generation speed
+- Memory usage
+
+**For Queries:**
+- Retrieval time
+- LLM generation speed
+- Tokens/characters per second
+- Per-model performance stats
+
+### Viewing Performance Metrics
+
+View performance statistics with:
+
+For PDF processing metrics
+python view_performance.py --pdf
+
+For query metrics
+python view_performance.py --query
+
+For all metrics
+python view_performance.py --all
+
+proc
+
+### Tracking During Processing
+
+Enable real-time tracking during PDF processing:
+python process_pdfs.py --show-stats
+
+
+### Using Performance Data
+
+The performance data can be used to:
+- Compare different LLM models
+- Optimize chunk sizes for your documents
+- Identify bottlenecks in the pipeline
+- Find the best balance between speed and quality

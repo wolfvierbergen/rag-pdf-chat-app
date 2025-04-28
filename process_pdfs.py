@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# process_pdfs.py - Process PDFs in the library folder
+# process_pdfs.py - Process PDFs in the library folder with performance tracking
 
 """
 This script processes PDFs in the 'library' folder:
@@ -7,6 +7,7 @@ This script processes PDFs in the 'library' folder:
 2. Chunks the text into smaller pieces
 3. Creates embeddings for the chunks
 4. Updates the FAISS index
+5. Tracks performance metrics
 
 Usage:
   python process_pdfs.py [--force] [--chunk-size 500]
@@ -33,10 +34,20 @@ try:
     import tiktoken
     from PyPDF2 import PdfReader
     from sentence_transformers import SentenceTransformer
+    import psutil
 except ImportError:
     print("Error: Required libraries not installed.")
     print("Please install the required libraries with:")
-    print("pip install PyPDF2 tiktoken sentence-transformers faiss-cpu")
+    print("pip install PyPDF2 tiktoken sentence-transformers faiss-cpu psutil")
+    sys.exit(1)
+
+# Import performance tracking utilities
+try:
+    from utils.performance_tracker import performance_tracker, PDFProcessingMetrics, track_function
+except ImportError:
+    print("Error: Performance tracking utilities not found.")
+    print("Please run: mkdir -p utils && touch utils/__init__.py")
+    print("Then create the performance_tracker.py file in the utils directory.")
     sys.exit(1)
 
 # Constants
@@ -64,16 +75,45 @@ def get_pdf_hash(file_path):
 def load_processed_files():
     """Load the list of processed files."""
     if os.path.exists(PROCESSED_FILES_TRACKER):
-        with open(PROCESSED_FILES_TRACKER, "r") as f:
-            return json.load(f)
+        try:
+            with open(PROCESSED_FILES_TRACKER, "r") as f:
+                file_contents = f.read().strip()
+                
+                # If file is empty, return default structure
+                if not file_contents:
+                    return {"processed_files": []}
+                
+                # Try to parse JSON
+                try:
+                    processed_files = json.loads(file_contents)
+                    
+                    # Validate structure
+                    if not isinstance(processed_files, dict) or "processed_files" not in processed_files:
+                        print(f"Warning: Invalid processed_files.json structure. Resetting.")
+                        return {"processed_files": []}
+                    
+                    return processed_files
+                
+                except json.JSONDecodeError:
+                    print(f"Warning: Corrupted processed_files.json. Resetting.")
+                    return {"processed_files": []}
+        
+        except IOError as e:
+            print(f"Error reading processed_files.json: {e}")
+            return {"processed_files": []}
     else:
-        return {"processed_files": []}
+        # Create the file with default structure if it doesn't exist
+        default_structure = {"processed_files": []}
+        with open(PROCESSED_FILES_TRACKER, "w") as f:
+            json.dump(default_structure, f, indent=2)
+        return default_structure
 
 def save_processed_files(processed_files):
     """Save the list of processed files."""
     with open(PROCESSED_FILES_TRACKER, "w") as f:
         json.dump(processed_files, f, indent=2)
 
+@track_function("PDF Processing")
 def extract_text_from_pdf(pdf_path):
     """Extract text from a PDF file."""
     print(f"Extracting text from: {pdf_path}")
@@ -88,6 +128,7 @@ def extract_text_from_pdf(pdf_path):
         print(f"Error extracting text from {pdf_path}: {e}")
         return ""
 
+@track_function("Text Chunking")
 def chunk_text(text, tokenizer, max_tokens=DEFAULT_CHUNK_SIZE):
     """Split text into chunks of specified token size."""
     tokens = tokenizer.encode(text)
@@ -96,26 +137,59 @@ def chunk_text(text, tokenizer, max_tokens=DEFAULT_CHUNK_SIZE):
     while i < len(tokens):
         chunks.append(tokenizer.decode(tokens[i:i + max_tokens]))
         i += max_tokens
-    return chunks
+    return chunks, len(tokens)
 
 def process_pdf(pdf_path, tokenizer, chunk_size=DEFAULT_CHUNK_SIZE):
     """Process a PDF file: extract text and create chunks."""
+    # Start tracking processing time
+    process_start = time.time()
+    
+    # Get file size
+    pdf_size_bytes = os.path.getsize(pdf_path)
+    
     # Extract text from PDF
     text = extract_text_from_pdf(pdf_path)
     if not text.strip():
         print(f"Warning: No text extracted from {pdf_path}")
-        return []
+        return [], None
     
     # Chunk the text
     print(f"Chunking text into {chunk_size}-token chunks...")
-    chunks = chunk_text(text, tokenizer, chunk_size)
+    chunks, num_tokens = chunk_text(text, tokenizer, chunk_size)
     print(f"Created {len(chunks)} chunks")
     
-    return chunks
+    # Calculate performance metrics
+    processing_time = time.time() - process_start
+    tokens_per_second = num_tokens / processing_time if processing_time > 0 else 0
+    
+    # Create metrics object (embedding time will be added later)
+    metrics = PDFProcessingMetrics(
+        pdf_path=pdf_path,
+        pdf_size_bytes=pdf_size_bytes,
+        extracted_text_length=len(text),
+        num_tokens=num_tokens,
+        num_chunks=len(chunks),
+        processing_time_seconds=processing_time,
+        tokens_per_second=tokens_per_second,
+        embedding_time_seconds=0.0,  # Will be updated after embedding
+        peak_memory_mb=performance_tracker.get_peak_memory_mb(),
+        timestamp=datetime.now().isoformat(),
 
+        #configuration tracking
+        chunk_size=chunk_size,
+        tokenizer_name=TOKENIZER_NAME,
+        embedding_model=EMBEDDING_MODEL
+    )
+    
+    return chunks, metrics
+
+@track_function("Embedding Generation")
 def generate_embeddings(chunks, embedding_model):
     """Generate embeddings for text chunks."""
     print(f"Generating embeddings using {EMBEDDING_MODEL}...")
+    
+    embedding_start = time.time()
+    
     passages = [f"passage: {chunk}" for chunk in chunks]
     
     embeddings = embedding_model.encode(
@@ -123,7 +197,9 @@ def generate_embeddings(chunks, embedding_model):
         show_progress_bar=True
     )
     
-    return embeddings
+    embedding_time = time.time() - embedding_start
+    
+    return embeddings, embedding_time
 
 def update_faiss_index(new_embeddings, new_chunks, pdf_info, metadata=None, existing_index=None, existing_corpus=None):
     """Update or create FAISS index with new embeddings."""
@@ -222,14 +298,15 @@ def main():
     parser = argparse.ArgumentParser(description="Process PDFs in the library folder")
     parser.add_argument("--force", action="store_true", help="Force reprocessing of all PDFs")
     parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE, help=f"Token size for chunking (default: {DEFAULT_CHUNK_SIZE})")
+    parser.add_argument("--show-stats", action="store_true", help="Show performance statistics after processing")
     
     args = parser.parse_args()
     
     # Check if required folders exist
     for folder in [LIBRARY_FOLDER, PROCESSED_FOLDER, CHUNKS_FOLDER, EMBEDDINGS_FOLDER, INDEX_FOLDER]:
         if not os.path.exists(folder):
-            print(f"Error: Required folder {folder} does not exist. Please run project_structure.py first.")
-            sys.exit(1)
+            os.makedirs(folder, exist_ok=True)
+            print(f"Created folder: {folder}")
     
     # Load the list of processed files
     processed_files = load_processed_files()
@@ -276,15 +353,18 @@ def main():
         
         print(f"\nProcessing: {pdf_file}")
         
-        # Process the PDF
-        chunks = process_pdf(pdf_path, tokenizer, args.chunk_size)
+        # Process the PDF with performance tracking
+        chunks, metrics = process_pdf(pdf_path, tokenizer, args.chunk_size)
         
-        if not chunks:
+        if not chunks or metrics is None:
             print(f"Skipping {pdf_file} - no text chunks extracted")
             continue
         
         # Generate embeddings
-        embeddings = generate_embeddings(chunks, embedding_model)
+        embeddings, embedding_time = generate_embeddings(chunks, embedding_model)
+        
+        # Update embedding time in metrics
+        metrics.embedding_time_seconds = embedding_time
         
         # Create PDF info
         pdf_info = {
@@ -293,6 +373,9 @@ def main():
             "processed_time": datetime.now().isoformat(),
             "num_chunks": len(chunks)
         }
+        
+        # Record performance metrics
+        performance_tracker.record_pdf_processing(metrics)
         
         # Save chunks and embeddings
         save_chunks_and_embeddings(chunks, embeddings, pdf_info)
@@ -328,10 +411,19 @@ def main():
         print(f"\nProcessed {new_pdfs_processed} new PDF files")
     else:
         print("\nNo new PDF files to process")
+    
+    # Show performance statistics if requested
+    if args.show_stats:
+        stats = performance_tracker.get_pdf_processing_stats()
+        print("\n===== PDF Processing Performance Statistics =====")
+        for key, value in stats.items():
+            if isinstance(value, float):
+                print(f"{key}: {value:.2f}")
+            else:
+                print(f"{key}: {value}")
 
 if __name__ == "__main__":
     start_time = time.time()
     main()
     elapsed_time = time.time() - start_time
-    print(f"\nTotal processing time: {elapsed_time:.2f} seconds")#!/usr/bin/env python
-
+    print(f"\nTotal processing time: {elapsed_time:.2f} seconds")
